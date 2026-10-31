@@ -2,8 +2,7 @@ CREATE TABLE customers (
     id             BIGSERIAL PRIMARY KEY,
     email          VARCHAR(255) NOT NULL UNIQUE,
     password_hash  VARCHAR(255) NOT NULL,
-    has_paid       BOOLEAN NOT NULL DEFAULT FALSE,
-    created_at     TIMESTAMPTZ NOT NULL DEFAULT now()
+    has_paid       BOOLEAN NOT NULL DEFAULT FALSE
 );
 CREATE TABLE products (
     id           SERIAL PRIMARY KEY,
