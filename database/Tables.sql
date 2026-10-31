@@ -19,7 +19,8 @@ CREATE TABLE customers (
     email          VARCHAR(255) NOT NULL UNIQUE,
     password_hash  VARCHAR(255) NOT NULL,
     has_paid       BOOLEAN NOT NULL DEFAULT FALSE,
-    created_at     TIMESTAMPTZ NOT NULL DEFAULT now()
+    created_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
+    role          TEXT NOT NULL CHECK (role IN ('admin', 'staff', 'customer'))
 );
 
 -- ---------------------------------------------------------------------
