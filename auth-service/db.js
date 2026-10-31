@@ -1,25 +1,50 @@
 // Database helpers for the auth service (PostgreSQL)
+// Matches the team's Tables.sql: people live in "customers" and "staff_users".
 // Install first: npm install pg
 // Set the connection before starting, for example (PowerShell):
-//   $env:DATABASE_URL="postgres://USER:PASSWORD@localhost:5432/DBNAME"
+//   $env:DATABASE_URL="postgres://USER:PASSWORD@localhost:5432/brightloop"
 const { Pool } = require("pg");
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 
-// Find a user by email. Returns null if there is none.
+// Find a person by email: looks in customers first, then staff_users.
+// Returns { id, email, passwordHash, role, kind } or null.
+// kind is "customer" or "staff" (it tells us which table the person is in).
 async function findByEmail(email) {
-  const result = await pool.query(
+  const e = String(email).toLowerCase();
+
+  let result = await pool.query(
     `SELECT id, email, password_hash AS "passwordHash", role
-     FROM users WHERE email = $1`,
-    [String(email).toLowerCase()]
+     FROM customers WHERE email = $1`,
+    [e]
   );
-  return result.rows[0] || null;
+  if (result.rows[0]) return { ...result.rows[0], kind: "customer" };
+
+  result = await pool.query(
+    `SELECT id, email, password_hash AS "passwordHash", role
+     FROM staff_users WHERE email = $1`,
+    [e]
+  );
+  if (result.rows[0]) return { ...result.rows[0], kind: "staff" };
+
+  return null;
 }
 
-// Add a new user (the password must already be hashed).
-async function createUser(email, passwordHash, role) {
+// Add a new customer (the password must already be hashed).
+async function createCustomer(email, passwordHash) {
   const result = await pool.query(
-    `INSERT INTO users (email, password_hash, role)
+    `INSERT INTO customers (email, password_hash, role)
+     VALUES ($1, $2, 'customer')
+     RETURNING id, email, role`,
+    [email.toLowerCase(), passwordHash]
+  );
+  return result.rows[0];
+}
+
+// Add a new staff member. role must be 'admin' or 'sales'.
+async function createStaff(email, passwordHash, role) {
+  const result = await pool.query(
+    `INSERT INTO staff_users (email, password_hash, role)
      VALUES ($1, $2, $3)
      RETURNING id, email, role`,
     [email.toLowerCase(), passwordHash, role]
@@ -27,39 +52,13 @@ async function createUser(email, passwordHash, role) {
   return result.rows[0];
 }
 
-// Change a user's password (the new password must already be hashed).
-async function updatePassword(email, passwordHash) {
-  await pool.query("UPDATE users SET password_hash = $1 WHERE email = $2", [
+// Change a person's password in whichever table they are in.
+async function updatePassword(user, passwordHash) {
+  const table = user.kind === "staff" ? "staff_users" : "customers";
+  await pool.query(`UPDATE ${table} SET password_hash = $1 WHERE id = $2`, [
     passwordHash,
-    email.toLowerCase(),
+    user.id,
   ]);
 }
 
-// Password reset tokens
-async function saveResetToken(token, email, expiresAt) {
-  await pool.query(
-    "INSERT INTO reset_tokens (token, email, expires_at) VALUES ($1, $2, $3)",
-    [token, email, expiresAt]
-  );
-}
-
-async function getResetToken(token) {
-  const result = await pool.query(
-    `SELECT email, expires_at AS "expiresAt" FROM reset_tokens WHERE token = $1`,
-    [token]
-  );
-  return result.rows[0] || null;
-}
-
-async function deleteResetToken(token) {
-  await pool.query("DELETE FROM reset_tokens WHERE token = $1", [token]);
-}
-
-module.exports = {
-  findByEmail,
-  createUser,
-  updatePassword,
-  saveResetToken,
-  getResetToken,
-  deleteResetToken,
-};
+module.exports = { findByEmail, createCustomer, createStaff, updatePassword };
