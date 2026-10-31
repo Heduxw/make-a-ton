@@ -1,0 +1,5 @@
+# Ignore Visual Studio temporary cache files
+.vs/
+*.suo
+*.user
+*.sqlite
