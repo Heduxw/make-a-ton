@@ -3,13 +3,23 @@ import "dotenv/config";
 import express from "express";
 import cors from "cors";
 import pg from "pg";
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { z } from "zod";
+import path from "path";
+import { fileURLToPath } from "url";
 
 // ---------------------------------------------------------------
 // 1. SETUP
 // ---------------------------------------------------------------
+
+// Stop immediately, with a clear message, if a required setting is missing
+for (const name of ["DATABASE_URL", "JWT_SECRET"]) {
+  if (!process.env[name]) {
+    console.error(`Missing ${name}. Add it to your .env file and restart.`);
+    process.exit(1);
+  }
+}
 
 // Read DATE columns as plain text ("2026-11-01") to avoid timezone shifts
 pg.types.setTypeParser(1082, (value) => value);
@@ -20,6 +30,11 @@ const db = new pg.Pool({ connectionString: process.env.DATABASE_URL });
 const app = express();
 app.use(cors());           // allow the website (a different origin) to call us
 app.use(express.json());   // turn JSON request bodies into req.body
+
+// Serve the website (web/index.html, admin.html, sales.html) from this same server.
+// Open http://localhost:3000 instead of double-clicking the HTML files.
+const here = path.dirname(fileURLToPath(import.meta.url));
+app.use(express.static(path.join(here, "web")));
 
 const BCRYPT_ROUNDS = Number(process.env.BCRYPT_ROUNDS) || 12;
 

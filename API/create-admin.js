@@ -1,7 +1,7 @@
 // Creates a staff login from the command line (use it for the first admin).
 // Usage: npm run create-admin -- admin@brightloop.com "Strong#Pass1" admin
 import "dotenv/config";
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 import pg from "pg";
 
 const [, , email, password, role = "admin"] = process.argv;

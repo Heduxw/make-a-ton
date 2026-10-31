@@ -162,7 +162,7 @@
     }
     function logout() {
       localStorage.removeItem(KEY);
-      location.href = "index.html";
+      location.href = "login.html";
     }
     async function api(path, opts = {}) {
       const headers = { "Content-Type": "application/json" };
@@ -270,7 +270,7 @@
 
     // ---- Start ----
     if (!session || session.role !== "admin") {
-      location.href = "index.html";
+      location.href = "login.html";
     } else {
       document.getElementById("who").textContent = session.email;
       refreshAll().catch((err) => alert(err.message));

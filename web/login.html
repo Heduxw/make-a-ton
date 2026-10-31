@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Brightloop | Staff sign in</title>
+  <style>
+    body { margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center;
+           background: #f4f6f9; font-family: system-ui, -apple-system, sans-serif; color: #1d2433; }
+    .box { background: #fff; padding: 32px; border-radius: 10px; width: 320px;
+           box-shadow: 0 2px 10px rgba(0,0,0,.1); }
+    h1 { margin: 0 0 4px; }
+    p { margin: 0 0 16px; color: #667; }
+    label { display: block; font-size: .9rem; margin: 12px 0 4px; }
+    input { width: 100%; padding: 9px; border: 1px solid #c8cdd8; border-radius: 6px; font: inherit; }
+    button { margin-top: 18px; width: 100%; padding: 10px; border: 0; border-radius: 6px;
+             background: #3461e0; color: #fff; font: inherit; cursor: pointer; }
+    .msg { margin-top: 12px; color: #8a1c1c; font-size: .9rem; min-height: 1em; }
+  </style>
+</head>
+<body>
+  <div class="box">
+    <h1>Brightloop</h1>
+    <p>Staff sign in</p>
+
+    <form id="login-form">
+      <label for="email">Email</label>
+      <input id="email" type="email" required autocomplete="username">
+
+      <label for="password">Password</label>
+      <input id="password" type="password" required autocomplete="current-password">
+
+      <button type="submit">Sign in</button>
+    </form>
+    <div class="msg" id="msg"></div>
+    <p style="margin-top:16px;font-size:.9rem"><a href="index.html">Back to home</a></p>
+  </div>
+
+  <script>
+    const API = "http://localhost:3000";     // address of the backend
+    const KEY = "brightloop_session";
+
+    // Already signed in? Go straight to the right page.
+    const saved = JSON.parse(localStorage.getItem(KEY) || "null");
+    if (saved) location.href = saved.role === "admin" ? "admin.html" : "sales.html";
+
+    document.getElementById("login-form").addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const msg = document.getElementById("msg");
+      msg.textContent = "";
+
+      try {
+        const res = await fetch(API + "/auth/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email: document.getElementById("email").value,
+            password: document.getElementById("password").value,
+          }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Login failed");
+
+        // data = { token, role, email }
+        localStorage.setItem(KEY, JSON.stringify(data));
+        location.href = data.role === "admin" ? "admin.html" : "sales.html";
+      } catch (err) {
+        msg.textContent = err.message === "Failed to fetch"
+          ? "Cannot reach the server. Is it running?"
+          : err.message;
+      }
+    });
+  </script>
+</body>
+</html>

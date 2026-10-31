@@ -3,70 +3,165 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Brightloop | Sign in</title>
+  <title>Brightloop | Create your account</title>
   <style>
-    body { margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center;
-           background: #f4f6f9; font-family: system-ui, -apple-system, sans-serif; color: #1d2433; }
-    .box { background: #fff; padding: 32px; border-radius: 10px; width: 320px;
-           box-shadow: 0 2px 10px rgba(0,0,0,.1); }
-    h1 { margin: 0 0 4px; }
-    p { margin: 0 0 16px; color: #667; }
-    label { display: block; font-size: .9rem; margin: 12px 0 4px; }
-    input { width: 100%; padding: 9px; border: 1px solid #c8cdd8; border-radius: 6px; font: inherit; }
-    button { margin-top: 18px; width: 100%; padding: 10px; border: 0; border-radius: 6px;
-             background: #3461e0; color: #fff; font: inherit; cursor: pointer; }
-    .msg { margin-top: 12px; color: #8a1c1c; font-size: .9rem; min-height: 1em; }
+    :root {
+      --indigo: #1b2a6b;
+      --blue: #3461e0;
+      --amber: #f2b544;
+      --ink: #1d2433;
+      --muted: #5b6476;
+      --line: #c8cdd8;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; display: grid; grid-template-columns: 1.1fr 1fr;
+           font-family: system-ui, -apple-system, "Segoe UI", sans-serif; color: var(--ink); }
+
+    /* Left: the message */
+    .intro { background: var(--indigo); color: #fff; padding: 48px 56px; display: flex;
+             flex-direction: column; justify-content: space-between; gap: 32px; }
+    .brand { font-weight: 700; font-size: 1.2rem; letter-spacing: .01em; }
+    h1 { font-family: Georgia, "Times New Roman", serif; font-weight: 400; font-size: clamp(2.2rem, 4.5vw, 3.6rem);
+         line-height: 1.1; margin: 0 0 16px; max-width: 14ch; }
+    .intro p { margin: 0; max-width: 42ch; line-height: 1.55; color: #d5dbf5; }
+    .loop { width: min(260px, 60%); height: auto; }
+    .loop circle.ring { fill: none; stroke: #6f86e8; stroke-width: 3; }
+    .loop circle.dot { fill: var(--amber); }
+    @media (prefers-reduced-motion: no-preference) {
+      .loop .orbit { transform-origin: 100px 100px; animation: turn 12s linear infinite; }
+    }
+    @keyframes turn { to { transform: rotate(360deg); } }
+
+    /* Right: the form */
+    .form-side { display: flex; flex-direction: column; justify-content: center; padding: 48px 56px; }
+    .form-box { width: 100%; max-width: 380px; margin: 0 auto; }
+    h2 { margin: 0 0 4px; font-size: 1.5rem; }
+    .sub { margin: 0 0 20px; color: var(--muted); }
+    label { display: block; font-size: .9rem; margin: 14px 0 4px; }
+    input { width: 100%; padding: 10px; border: 1px solid var(--line); border-radius: 6px; font: inherit; }
+    input:focus-visible, button:focus-visible, a:focus-visible { outline: 3px solid #9db4f5; outline-offset: 1px; }
+    ul.rules { list-style: none; margin: 10px 0 0; padding: 0; font-size: .85rem; color: var(--muted); }
+    ul.rules li::before { content: "\25CB"; display: inline-block; width: 1.4em; }
+    ul.rules li.ok { color: #17603a; }
+    ul.rules li.ok::before { content: "\2713"; }
+    button { margin-top: 20px; width: 100%; padding: 11px; border: 0; border-radius: 6px;
+             background: var(--blue); color: #fff; font: inherit; font-weight: 600; cursor: pointer; }
+    button:disabled { opacity: .6; cursor: default; }
+    .msg { margin-top: 14px; padding: 10px; border-radius: 6px; font-size: .9rem; display: none; }
+    .msg.ok { display: block; background: #e6f6ec; color: #17603a; }
+    .msg.error { display: block; background: #fdeaea; color: #8a1c1c; }
+    .staff { margin-top: 28px; font-size: .9rem; color: var(--muted); }
+    a { color: var(--blue); }
+
+    @media (max-width: 800px) {
+      body { grid-template-columns: 1fr; }
+      .intro { padding: 32px 24px; }
+      .loop { display: none; }
+      .form-side { padding: 32px 24px; }
+    }
   </style>
 </head>
 <body>
-  <div class="box">
-    <h1>Brightloop</h1>
-    <p>Staff sign in</p>
+  <section class="intro">
+    <div class="brand">Brightloop</div>
+    <div>
+      <h1>Subscriptions that bill themselves.</h1>
+      <p>Create your account to start a subscription with Brightloop. Your plans and invoices will be kept in one place.</p>
+    </div>
+    <svg class="loop" viewBox="0 0 200 200" aria-hidden="true">
+      <circle class="ring" cx="100" cy="100" r="80"></circle>
+      <g class="orbit"><circle class="dot" cx="100" cy="20" r="10"></circle></g>
+    </svg>
+  </section>
 
-    <form id="login-form">
-      <label for="email">Email</label>
-      <input id="email" type="email" required autocomplete="username">
+  <section class="form-side">
+    <div class="form-box">
+      <h2>Create your account</h2>
+      <p class="sub">It takes less than a minute.</p>
 
-      <label for="password">Password</label>
-      <input id="password" type="password" required autocomplete="current-password">
+      <form id="signup-form" novalidate>
+        <label for="email">Email</label>
+        <input id="email" type="email" required autocomplete="email">
 
-      <button type="submit">Sign in</button>
-    </form>
-    <div class="msg" id="msg"></div>
-  </div>
+        <label for="password">Password</label>
+        <input id="password" type="password" required autocomplete="new-password">
+        <ul class="rules" id="rules">
+          <li data-rule="length">More than 8 characters</li>
+          <li data-rule="upper">An uppercase letter</li>
+          <li data-rule="lower">A lowercase letter</li>
+          <li data-rule="special">A special character</li>
+        </ul>
+
+        <label for="confirm">Confirm password</label>
+        <input id="confirm" type="password" required autocomplete="new-password">
+
+        <button id="submit" type="submit">Create account</button>
+      </form>
+      <div class="msg" id="msg" role="status"></div>
+
+      <p class="staff">Brightloop staff? <a href="login.html">Sign in here</a></p>
+    </div>
+  </section>
 
   <script>
-    const API = "http://localhost:3000";     // address of the backend
-    const KEY = "brightloop_session";
+    const rules = {
+      length: (p) => p.length > 8,
+      upper: (p) => /[A-Z]/.test(p),
+      lower: (p) => /[a-z]/.test(p),
+      special: (p) => /[^A-Za-z0-9]/.test(p),
+    };
 
-    // Already signed in? Go straight to the right page.
-    const saved = JSON.parse(localStorage.getItem(KEY) || "null");
-    if (saved) location.href = saved.role === "admin" ? "admin.html" : "sales.html";
+    const form = document.getElementById("signup-form");
+    const msg = document.getElementById("msg");
+    const password = document.getElementById("password");
 
-    document.getElementById("login-form").addEventListener("submit", async (event) => {
+    function show(text, ok) {
+      msg.textContent = text;
+      msg.className = "msg " + (ok ? "ok" : "error");
+    }
+
+    // Tick each rule as the password meets it
+    password.addEventListener("input", () => {
+      for (const li of document.querySelectorAll("#rules li")) {
+        li.classList.toggle("ok", rules[li.dataset.rule](password.value));
+      }
+    });
+
+    form.addEventListener("submit", async (event) => {
       event.preventDefault();
-      const msg = document.getElementById("msg");
-      msg.textContent = "";
+      const email = document.getElementById("email").value.trim();
+      const pass = password.value;
 
+      if (!email || !email.includes("@")) return show("Enter a valid email address.", false);
+      if (!Object.values(rules).every((test) => test(pass))) {
+        return show("Your password does not meet all the rules listed.", false);
+      }
+      if (pass !== document.getElementById("confirm").value) {
+        return show("The two passwords do not match.", false);
+      }
+
+      const button = document.getElementById("submit");
+      button.disabled = true;
       try {
-        const res = await fetch(API + "/auth/login", {
+        const res = await fetch("/signup", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            email: document.getElementById("email").value,
-            password: document.getElementById("password").value,
-          }),
+          body: JSON.stringify({ email, password: pass }),
         });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || "Login failed");
-
-        // data = { token, role, email }
-        localStorage.setItem(KEY, JSON.stringify(data));
-        location.href = data.role === "admin" ? "admin.html" : "sales.html";
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          const details = data.details ? ": " + data.details.map((d) => d.message).join(", ") : "";
+          throw new Error((data.error || "Could not create the account") + details);
+        }
+        form.reset();
+        document.querySelectorAll("#rules li").forEach((li) => li.classList.remove("ok"));
+        show("Your account has been created.", true);
       } catch (err) {
-        msg.textContent = err.message === "Failed to fetch"
-          ? "Cannot reach the server. Is it running?"
-          : err.message;
+        show(err.message === "Failed to fetch"
+          ? "Cannot reach the server. Open this page at http://localhost:3000"
+          : err.message, false);
+      } finally {
+        button.disabled = false;
       }
     });
   </script>
