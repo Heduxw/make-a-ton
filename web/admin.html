@@ -1,0 +1,280 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Brightloop | Admin</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: system-ui, -apple-system, sans-serif; background: #f4f6f9; color: #1d2433; }
+    header { background: #1d2433; color: #fff; padding: 12px 24px; display: flex; justify-content: space-between; align-items: center; }
+    header button { background: #e6e9f0; color: #1d2433; border: 0; border-radius: 6px; padding: 6px 12px; cursor: pointer; }
+    main { max-width: 1200px; margin: 0 auto; padding: 24px; }
+    h2 { font-size: 1.1rem; margin: 0 0 12px; }
+    section { background: #fff; border-radius: 8px; padding: 16px; margin-bottom: 24px; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+    .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 24px; }
+    .card { background: #fff; border-radius: 8px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+    .card .label { color: #667; font-size: .9rem; }
+    .card .value { font-size: 1.6rem; font-weight: 600; margin-top: 4px; }
+    .grid3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin-bottom: 24px; }
+    .grid3 section { margin-bottom: 0; }
+    form { display: grid; gap: 8px; }
+    label { font-size: .9rem; color: #445; }
+    input, select { padding: 8px; font: inherit; border: 1px solid #c8cdd8; border-radius: 6px; width: 100%; }
+    form button { padding: 9px; border: 0; border-radius: 6px; background: #3461e0; color: #fff; font: inherit; cursor: pointer; margin-top: 4px; }
+    .hint { font-size: .8rem; color: #667; }
+    .msg { margin-top: 10px; font-size: .9rem; }
+    .filters { display: flex; gap: 8px; align-items: center; margin-bottom: 10px; }
+    .filters select { width: auto; }
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: .9rem; }
+    th, td { text-align: left; padding: 8px; border-bottom: 1px solid #eef0f4; white-space: nowrap; }
+    th { color: #556; }
+    .empty { color: #888; font-style: italic; }
+  </style>
+</head>
+<body>
+  <header>
+    <strong>Brightloop Admin</strong>
+    <div>
+      <span id="who"></span>
+      <button onclick="logout()">Log out</button>
+    </div>
+  </header>
+
+  <main>
+    <div class="cards">
+      <div class="card"><div class="label">Active subscriptions</div><div class="value" id="c-active">-</div></div>
+      <div class="card"><div class="label">Revenue collected</div><div class="value" id="c-collected">-</div></div>
+      <div class="card"><div class="label">Amount outstanding</div><div class="value" id="c-outstanding">-</div></div>
+      <div class="card"><div class="label">Overdue invoices</div><div class="value" id="c-overdue">-</div></div>
+      <div class="card"><div class="label">Customers</div><div class="value" id="c-customers">-</div></div>
+    </div>
+
+    <div class="grid3">
+      <section>
+        <h2>Add product</h2>
+        <form id="product-form">
+          <label for="p-name">Name</label>
+          <input id="p-name" name="name" required>
+          <label for="p-type">Type</label>
+          <input id="p-type" name="type" required>
+          <label for="p-sales">Sales price</label>
+          <input id="p-sales" name="salesPrice" type="number" step="0.01" min="0" required>
+          <label for="p-cost">Cost price</label>
+          <input id="p-cost" name="costPrice" type="number" step="0.01" min="0" required>
+          <label for="p-notes">Notes</label>
+          <input id="p-notes" name="notes">
+          <button type="submit">Add product</button>
+        </form>
+        <div class="msg" id="product-msg"></div>
+      </section>
+
+      <section>
+        <h2>Add plan</h2>
+        <form id="plan-form">
+          <label for="plan-product">Product</label>
+          <select id="plan-product" name="productId" required></select>
+          <label for="pl-name">Plan name</label>
+          <input id="pl-name" name="name" required>
+          <label for="pl-price">Price</label>
+          <input id="pl-price" name="price" type="number" step="0.01" min="0" required>
+          <label for="pl-period">Billing period</label>
+          <select id="pl-period" name="billingPeriod">
+            <option value="daily">Daily</option>
+            <option value="weekly">Weekly</option>
+            <option value="monthly" selected>Monthly</option>
+            <option value="yearly">Yearly</option>
+          </select>
+          <label for="pl-min">Minimum quantity</label>
+          <input id="pl-min" name="minQuantity" type="number" min="1" value="1">
+          <label for="pl-from">Available from</label>
+          <input id="pl-from" name="availableFrom" type="date">
+          <label for="pl-to">Available to</label>
+          <input id="pl-to" name="availableTo" type="date">
+          <button type="submit">Add plan</button>
+        </form>
+        <div class="msg" id="plan-msg"></div>
+      </section>
+
+      <section>
+        <h2>Add staff user</h2>
+        <form id="staff-form">
+          <label for="s-email">Email</label>
+          <input id="s-email" name="email" type="email" required>
+          <label for="s-password">Password</label>
+          <input id="s-password" name="password" type="password" required autocomplete="new-password">
+          <span class="hint">More than 8 characters, with an uppercase letter, a lowercase letter and a special character.</span>
+          <label for="s-role">Role</label>
+          <select id="s-role" name="role">
+            <option value="sales" selected>Sales</option>
+            <option value="admin">Admin</option>
+          </select>
+          <button type="submit">Create user</button>
+        </form>
+        <div class="msg" id="staff-msg"></div>
+      </section>
+    </div>
+
+    <section>
+      <h2>Products</h2>
+      <div class="table-wrap" id="products"></div>
+    </section>
+
+    <section>
+      <h2>Plans</h2>
+      <div class="table-wrap" id="plans"></div>
+    </section>
+
+    <section>
+      <h2>Invoices</h2>
+      <div class="filters">
+        <label for="inv-filter">Show</label>
+        <select id="inv-filter">
+          <option value="">All</option>
+          <option value="PAID">Paid</option>
+          <option value="UNPAID">Unpaid</option>
+          <option value="OVERDUE">Overdue</option>
+        </select>
+      </div>
+      <div class="table-wrap" id="invoices"></div>
+    </section>
+  </main>
+
+  <script>
+    const API = "http://localhost:3000";
+    const KEY = "brightloop_session";
+    const session = JSON.parse(localStorage.getItem(KEY) || "null");
+
+    // ---- Helpers ----
+    function esc(value) {
+      return String(value ?? "").replace(/[&<>"']/g, (c) => ({
+        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
+      }[c]));
+    }
+    function money(value) {
+      return Number(value || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+    function say(id, text, ok = true) {
+      const el = document.getElementById(id);
+      el.textContent = text;
+      el.style.color = ok ? "#17603a" : "#8a1c1c";
+    }
+    function logout() {
+      localStorage.removeItem(KEY);
+      location.href = "index.html";
+    }
+    async function api(path, opts = {}) {
+      const headers = { "Content-Type": "application/json" };
+      if (session) headers.Authorization = "Bearer " + session.token;
+      const res = await fetch(API + path, {
+        method: opts.method || "GET",
+        headers,
+        body: opts.body ? JSON.stringify(opts.body) : undefined,
+      });
+      if (res.status === 401) { logout(); throw new Error("Session expired. Please sign in again."); }
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        const details = data.details ? ": " + data.details.map((d) => d.message).join(", ") : "";
+        throw new Error((data.error || "Request failed") + details);
+      }
+      return data;
+    }
+    // head: array of column titles; rows: array of arrays of already-escaped HTML
+    function table(id, head, rows) {
+      const el = document.getElementById(id);
+      if (!rows.length) { el.innerHTML = '<p class="empty">No records.</p>'; return; }
+      el.innerHTML = `<table><thead><tr>${head.map((h) => `<th>${esc(h)}</th>`).join("")}</tr></thead>
+        <tbody>${rows.map((r) => `<tr>${r.map((c) => `<td>${c}</td>`).join("")}</tr>`).join("")}</tbody></table>`;
+    }
+    // Reads a form into a JSON object, skipping empty fields
+    function formBody(form, numberFields = []) {
+      const body = {};
+      for (const [key, value] of new FormData(form)) {
+        if (value === "") continue;
+        body[key] = numberFields.includes(key) ? Number(value) : value;
+      }
+      return body;
+    }
+
+    // ---- Data loading ----
+    async function loadSummary() {
+      const s = await api("/reports/summary");
+      document.getElementById("c-active").textContent = s.active_subscriptions;
+      document.getElementById("c-customers").textContent = s.customers;
+      document.getElementById("c-collected").textContent = money(s.revenue_collected);
+      document.getElementById("c-outstanding").textContent = money(s.amount_outstanding);
+      document.getElementById("c-overdue").textContent = s.overdue_invoices;
+    }
+
+    async function loadProducts() {
+      const products = await api("/products");
+      table("products", ["ID", "Name", "Type", "Sales price", "Cost price", "Active"],
+        products.map((p) => [esc(p.id), esc(p.name), esc(p.type), esc(money(p.sales_price)),
+                             esc(money(p.cost_price)), p.active ? "Yes" : "No"]));
+      document.getElementById("plan-product").innerHTML =
+        products.map((p) => `<option value="${esc(p.id)}">${esc(p.name)}</option>`).join("");
+    }
+
+    async function loadPlans() {
+      const plans = await api("/plans");
+      table("plans", ["ID", "Product", "Plan", "Price", "Billing", "Min qty"],
+        plans.map((p) => [esc(p.id), esc(p.product_name), esc(p.name), esc(money(p.price)),
+                          esc(p.billing_period), esc(p.min_quantity)]));
+    }
+
+    async function loadInvoices() {
+      const filter = document.getElementById("inv-filter").value;
+      const invoices = await api("/invoices" + (filter ? "?status=" + filter : ""));
+      table("invoices", ["ID", "Customer", "Period", "Amount", "Due", "Status"],
+        invoices.map((i) => [esc(i.id), esc(i.customer_email),
+                             esc(i.period_start + " to " + i.period_end), esc(money(i.amount)),
+                             esc(i.due_date), esc(i.state)]));
+    }
+
+    async function refreshAll() {
+      await Promise.all([loadSummary(), loadProducts(), loadPlans(), loadInvoices()]);
+    }
+
+    // ---- Forms ----
+    document.getElementById("product-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      try {
+        await api("/products", { method: "POST", body: formBody(e.target, ["salesPrice", "costPrice"]) });
+        e.target.reset();
+        say("product-msg", "Product added.");
+        await refreshAll();
+      } catch (err) { say("product-msg", err.message, false); }
+    });
+
+    document.getElementById("plan-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      try {
+        await api("/plans", { method: "POST", body: formBody(e.target, ["productId", "price", "minQuantity"]) });
+        e.target.reset();
+        say("plan-msg", "Plan added.");
+        await refreshAll();
+      } catch (err) { say("plan-msg", err.message, false); }
+    });
+
+    document.getElementById("staff-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      try {
+        const created = await api("/auth/staff", { method: "POST", body: formBody(e.target) });
+        e.target.reset();
+        say("staff-msg", `Created ${created.role} user ${created.email}.`);
+      } catch (err) { say("staff-msg", err.message, false); }
+    });
+
+    document.getElementById("inv-filter").addEventListener("change", loadInvoices);
+
+    // ---- Start ----
+    if (!session || session.role !== "admin") {
+      location.href = "index.html";
+    } else {
+      document.getElementById("who").textContent = session.email;
+      refreshAll().catch((err) => alert(err.message));
+    }
+  </script>
+</body>
+</html>

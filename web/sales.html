@@ -1,0 +1,264 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Brightloop | Sales</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: system-ui, -apple-system, sans-serif; background: #f4f6f9; color: #1d2433; }
+    header { background: #1d2433; color: #fff; padding: 12px 24px; display: flex; justify-content: space-between; align-items: center; }
+    header button { background: #e6e9f0; color: #1d2433; border: 0; border-radius: 6px; padding: 6px 12px; cursor: pointer; }
+    main { max-width: 1200px; margin: 0 auto; padding: 24px; }
+    h2 { font-size: 1.1rem; margin: 0 0 12px; }
+    section { background: #fff; border-radius: 8px; padding: 16px; margin-bottom: 24px; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+    .grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; margin-bottom: 24px; }
+    .grid2 section { margin-bottom: 0; }
+    form { display: grid; gap: 8px; }
+    label { font-size: .9rem; color: #445; }
+    input, select { padding: 8px; font: inherit; border: 1px solid #c8cdd8; border-radius: 6px; width: 100%; }
+    form button { padding: 9px; border: 0; border-radius: 6px; background: #3461e0; color: #fff; font: inherit; cursor: pointer; margin-top: 4px; }
+    .hint { font-size: .8rem; color: #667; }
+    .msg { margin-top: 10px; font-size: .9rem; }
+    .filters { display: flex; gap: 8px; align-items: center; margin-bottom: 10px; }
+    .filters select { width: auto; }
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: .9rem; }
+    th, td { text-align: left; padding: 8px; border-bottom: 1px solid #eef0f4; white-space: nowrap; }
+    th { color: #556; }
+    td button { padding: 4px 8px; border: 0; border-radius: 6px; background: #3461e0; color: #fff; cursor: pointer; font-size: .85rem; }
+    td button:disabled { opacity: .5; cursor: default; }
+    .empty { color: #888; font-style: italic; }
+  </style>
+</head>
+<body>
+  <header>
+    <strong>Brightloop Sales</strong>
+    <div>
+      <span id="who"></span>
+      <button onclick="logout()">Log out</button>
+    </div>
+  </header>
+
+  <main>
+    <div class="grid2">
+      <section>
+        <h2>Add customer</h2>
+        <form id="customer-form">
+          <label for="c-email">Email</label>
+          <input id="c-email" name="email" type="email" required>
+          <label for="c-password">Temporary password</label>
+          <input id="c-password" name="password" type="password" required autocomplete="new-password">
+          <span class="hint">More than 8 characters, with an uppercase letter, a lowercase letter and a special character.</span>
+          <button type="submit">Add customer</button>
+        </form>
+        <div class="msg" id="customer-msg"></div>
+      </section>
+
+      <section>
+        <h2>New subscription</h2>
+        <form id="subscription-form">
+          <label for="sub-customer">Customer</label>
+          <select id="sub-customer" name="customerId" required></select>
+          <label for="sub-plan">Plan</label>
+          <select id="sub-plan" name="planId" required></select>
+          <label for="sub-qty">Quantity</label>
+          <input id="sub-qty" name="quantity" type="number" min="1" value="1">
+          <label for="sub-start">Start date</label>
+          <input id="sub-start" name="startDate" type="date" required>
+          <label for="sub-expiry">Expiry date (optional)</label>
+          <input id="sub-expiry" name="expiryDate" type="date">
+          <button type="submit">Create subscription</button>
+        </form>
+        <div class="msg" id="subscription-msg"></div>
+      </section>
+    </div>
+
+    <section>
+      <h2>Subscriptions</h2>
+      <div class="filters">
+        <label for="sub-filter">Show</label>
+        <select id="sub-filter">
+          <option value="">All</option>
+          <option value="ACTIVE" selected>Active</option>
+          <option value="PAUSED">Paused</option>
+          <option value="CLOSED">Closed</option>
+        </select>
+      </div>
+      <div class="table-wrap" id="subscriptions"></div>
+      <div class="msg" id="bill-msg"></div>
+    </section>
+
+    <section>
+      <h2>Invoices</h2>
+      <div class="filters">
+        <label for="inv-filter">Show</label>
+        <select id="inv-filter">
+          <option value="">All</option>
+          <option value="UNPAID">Unpaid</option>
+          <option value="OVERDUE">Overdue</option>
+          <option value="PAID">Paid</option>
+        </select>
+      </div>
+      <div class="table-wrap" id="invoices"></div>
+      <div class="msg" id="pay-msg"></div>
+    </section>
+
+    <section>
+      <h2>Customers</h2>
+      <div class="table-wrap" id="customers"></div>
+    </section>
+  </main>
+
+  <script>
+    const API = "http://localhost:3000";
+    const KEY = "brightloop_session";
+    const session = JSON.parse(localStorage.getItem(KEY) || "null");
+
+    // ---- Helpers ----
+    function esc(value) {
+      return String(value ?? "").replace(/[&<>"']/g, (c) => ({
+        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
+      }[c]));
+    }
+    function money(value) {
+      return Number(value || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+    function say(id, text, ok = true) {
+      const el = document.getElementById(id);
+      el.textContent = text;
+      el.style.color = ok ? "#17603a" : "#8a1c1c";
+    }
+    function logout() {
+      localStorage.removeItem(KEY);
+      location.href = "index.html";
+    }
+    async function api(path, opts = {}) {
+      const headers = { "Content-Type": "application/json" };
+      if (session) headers.Authorization = "Bearer " + session.token;
+      const res = await fetch(API + path, {
+        method: opts.method || "GET",
+        headers,
+        body: opts.body ? JSON.stringify(opts.body) : undefined,
+      });
+      if (res.status === 401) { logout(); throw new Error("Session expired. Please sign in again."); }
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        const details = data.details ? ": " + data.details.map((d) => d.message).join(", ") : "";
+        throw new Error((data.error || "Request failed") + details);
+      }
+      return data;
+    }
+    // head: array of column titles; rows: array of arrays of already-escaped HTML
+    function table(id, head, rows) {
+      const el = document.getElementById(id);
+      if (!rows.length) { el.innerHTML = '<p class="empty">No records.</p>'; return; }
+      el.innerHTML = `<table><thead><tr>${head.map((h) => `<th>${esc(h)}</th>`).join("")}</tr></thead>
+        <tbody>${rows.map((r) => `<tr>${r.map((c) => `<td>${c}</td>`).join("")}</tr>`).join("")}</tbody></table>`;
+    }
+    function formBody(form, numberFields = []) {
+      const body = {};
+      for (const [key, value] of new FormData(form)) {
+        if (value === "") continue;
+        body[key] = numberFields.includes(key) ? Number(value) : value;
+      }
+      return body;
+    }
+
+    // ---- Data loading ----
+    async function loadCustomers() {
+      const customers = await api("/customers");
+      table("customers", ["ID", "Email", "Has paid", "Created"],
+        customers.map((c) => [esc(c.id), esc(c.email), c.has_paid ? "Yes" : "No",
+                              esc(new Date(c.created_at).toLocaleDateString())]));
+      document.getElementById("sub-customer").innerHTML =
+        customers.map((c) => `<option value="${esc(c.id)}">${esc(c.email)}</option>`).join("");
+    }
+
+    async function loadPlans() {
+      const plans = await api("/plans");
+      document.getElementById("sub-plan").innerHTML = plans.map((p) =>
+        `<option value="${esc(p.id)}">${esc(`${p.product_name} - ${p.name} (${money(p.price)} ${p.billing_period})`)}</option>`
+      ).join("");
+    }
+
+    async function loadSubscriptions() {
+      const status = document.getElementById("sub-filter").value;
+      const subs = await api("/subscriptions" + (status ? "?status=" + status : ""));
+      table("subscriptions",
+        ["ID", "Customer", "Product", "Plan", "Qty", "Unit price", "Status", "Next billing", "Action"],
+        subs.map((s) => [
+          esc(s.id), esc(s.customer_email), esc(s.product_name), esc(s.plan_name), esc(s.quantity),
+          esc(money(s.unit_price)), esc(s.status), esc(s.next_billing_date),
+          s.status === "ACTIVE" ? `<button onclick="billSubscription(${Number(s.id)})">Bill next period</button>` : "",
+        ]));
+    }
+
+    async function loadInvoices() {
+      const state = document.getElementById("inv-filter").value;
+      const invoices = await api("/invoices" + (state ? "?status=" + state : ""));
+      table("invoices",
+        ["ID", "Customer", "Period", "Amount", "Due", "Status", "Action"],
+        invoices.map((i) => [
+          esc(i.id), esc(i.customer_email), esc(i.period_start + " to " + i.period_end),
+          esc(money(i.amount)), esc(i.due_date), esc(i.state),
+          i.is_paid ? "" : `<button onclick="payInvoice(${Number(i.id)})">Mark paid</button>`,
+        ]));
+    }
+
+    async function refreshAll() {
+      await Promise.all([loadCustomers(), loadPlans(), loadSubscriptions(), loadInvoices()]);
+    }
+
+    // ---- Actions ----
+    async function billSubscription(id) {
+      try {
+        const inv = await api(`/subscriptions/${id}/invoices`, { method: "POST" });
+        say("bill-msg", `Invoice ${inv.id} created for ${money(inv.amount)}.`);
+        await refreshAll();
+      } catch (err) { say("bill-msg", err.message, false); }
+    }
+
+    async function payInvoice(id) {
+      try {
+        await api(`/invoices/${id}/pay`, { method: "POST" });
+        say("pay-msg", `Invoice ${id} marked as paid.`);
+        await refreshAll();
+      } catch (err) { say("pay-msg", err.message, false); }
+    }
+
+    // ---- Forms ----
+    document.getElementById("customer-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      try {
+        const created = await api("/customers", { method: "POST", body: formBody(e.target) });
+        e.target.reset();
+        say("customer-msg", `Customer ${created.email} added.`);
+        await refreshAll();
+      } catch (err) { say("customer-msg", err.message, false); }
+    });
+
+    document.getElementById("subscription-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      try {
+        await api("/subscriptions", { method: "POST", body: formBody(e.target, ["customerId", "planId", "quantity"]) });
+        e.target.reset();
+        document.getElementById("sub-qty").value = 1;
+        say("subscription-msg", "Subscription created.");
+        await refreshAll();
+      } catch (err) { say("subscription-msg", err.message, false); }
+    });
+
+    document.getElementById("sub-filter").addEventListener("change", loadSubscriptions);
+    document.getElementById("inv-filter").addEventListener("change", loadInvoices);
+
+    // ---- Start ----
+    if (!session || !["sales", "admin"].includes(session.role)) {
+      location.href = "index.html";
+    } else {
+      document.getElementById("who").textContent = session.email;
+      refreshAll().catch((err) => alert(err.message));
+    }
+  </script>
+</body>
+</html>
